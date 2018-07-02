@@ -16,3 +16,8 @@ def ui_pede_movimento
 	move = gets.strip
 	move.upcase
 end
+
+def ui_game_over
+	puts "\n\n\n\n\n\n"
+	puts "You Lost ... Loser"
+end
