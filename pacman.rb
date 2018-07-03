@@ -1,4 +1,5 @@
 require_relative 'ui'
+require_relative 'hero'
 
 def ler_mapa(numero_mapa)
 	unless File.exists?("mapa#{numero_mapa}.txt") #=> true?
@@ -15,33 +16,13 @@ def posicao_jogador(mapa_txt)
 	mapa_txt.each_with_index do |linha_elementos, linha| # linha i / indice da linha (0,1,2 ...)
 	 	coluna = linha_elementos.index "H" # retorna posição da coluna se ..=> "H"
 	 	if coluna # => nil?
-	 		return [linha,coluna]
+	 		player = Hero.new
+	 		player.linha = linha
+	 		player.coluna = coluna
+	 		return player
 	 	end
 	end
 	nil
-end
-
-def nova_posicao(direcao,posicao_atual)
-	posicao_next = posicao_atual.dup #duplica array
-	
-	#Array associativo
-	movimentos = {"W" => [-1,0],"S" => [1,0], "A" => [0,-1], "D" => [0,1]}
-
-	# case direcao
-	# 	when "W"
-	# 		posicao_next[0] += -1
-	# 	when "S"
-	# 		posicao_next[0] += 1
-	# 	when "A"
-	# 		posicao_next[1] += -1
-	# 	when "D"
-	# 		posicao_next[1] += 1
-	# end
-
-	movimento = movimentos[direcao]
-	posicao_next[0] += movimento[0]
-	posicao_next[1] += movimento[1]
-	posicao_next
 end
 
 def overview?(posicao_next,mapa_txt)
@@ -104,29 +85,38 @@ def find_inimigos(mapa_txt)
 	end
 end
 
+def bomba(posicao_next,mapa_txt)
+	if mapa_txt[posicao_next.linha][posicao_next.coluna] == "*" 
+		for direita in 1..4
+			mapa_txt[posicao_next.linha][posicao_next.coluna + direita] = " "
+		end
+	end
+	
+end
+
 def iniciar
 	nome_player = ui_boas_vindas
 	mapa_txt = ler_mapa(2)
 
 	while true # loop do cenario
 		ui_print_mapa(mapa_txt)
-		posicao_atual = posicao_jogador(mapa_txt) # posição_atual => array[linha,coluna]
+		player = posicao_jogador(mapa_txt) # return Object player attr :linha, :coluna
 		direcao = ui_pede_movimento
 
 		#movimento do heroi
-		posicao_next = nova_posicao(direcao,posicao_atual)
-		if overview?(posicao_next,mapa_txt) #overview ? true or false
+		posicao_next = player.nova_posicao(direcao) # return nova posição Object player
+		if overview?(posicao_next.to_array,mapa_txt) #overview ? true or false
 			system("clear") or system "cls"
 			next
 		end
-		mapa_txt[posicao_atual[0]][posicao_atual[1]] = " " # Espaço vazio quando sair da posição atual
-		mapa_txt[posicao_next[0]][posicao_next[1]] = "H"
+		player.space_nil(mapa_txt)
+		bomba(posicao_next,mapa_txt)
+		posicao_next.next_space(mapa_txt)
 
 		#movimento dos fantasmas
 		find_inimigos(mapa_txt)
 
 		if posicao_jogador(mapa_txt) == nil
-			system("clear") or system "cls"
 			ui_game_over
 			break
 		end
